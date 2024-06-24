@@ -87,7 +87,6 @@ class _AnimatedRatingBarState extends State<AnimatedRatingBar> {
                 artboard,
                 "State Machine 1",
                 onStateChange: (stateMachineName, stateName) {
-                  print("$stateMachineName, $stateName");
                   setState(() {
                     int? id = initialValue!.id;
                     ratingValue = stateMachineController!.getInputValue(id);
@@ -166,15 +165,11 @@ class _AnimatedRatingBarState extends State<AnimatedRatingBar> {
         ValueListenableBuilder(
           valueListenable: widget.reset!,
           builder: (BuildContext context, int value, Widget? child) {
-            print("${value} - ${valueReset} ");
             if(initialValue != null && value == 0 ) {
               initialValue!.change(0);
               valueReset = 10;
             }
-            return Text(
-              '$value',
-              style: Theme.of(context).textTheme.headline4,
-            );
+            return Container();
           },
         ),
       ],
