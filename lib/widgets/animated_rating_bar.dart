@@ -1,3 +1,4 @@
+import 'package:animated_rating_bar/animated_rating_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
 
@@ -20,7 +21,7 @@ class AnimatedRatingBar extends StatefulWidget {
   ///          },
   ///        );
   /// ```
-  const AnimatedRatingBar(
+  AnimatedRatingBar(
       {super.key,
       this.initialRating = 0.0,
       this.height,
@@ -28,6 +29,7 @@ class AnimatedRatingBar extends StatefulWidget {
       this.activeFillColor,
       this.strokeColor,
       required this.onRatingUpdate,
+      this.reset,
       this.animationColor});
 
   /// This sets Initial Rating of the Animated Rating Bar
@@ -59,6 +61,8 @@ class AnimatedRatingBar extends StatefulWidget {
   /// This holds double value on updation of the rating.
   final ValueChanged<double> onRatingUpdate;
 
+  ValueNotifier<int>? reset;
+
   @override
   State<AnimatedRatingBar> createState() => _AnimatedRatingBarState();
 }
@@ -67,94 +71,113 @@ class _AnimatedRatingBarState extends State<AnimatedRatingBar> {
   StateMachineController? stateMachineController;
   SMIInput<double>? initialValue;
   double ratingValue = 0.0;
+  int valueReset = 10;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: widget.height ?? 40,
-      width: widget.width ?? 140,
-      child: RiveAnimation.asset(
-        "packages/animated_rating_bar/assets/new_rating_animation.riv",
-        onInit: (artboard) {
-          stateMachineController = StateMachineController.fromArtboard(
-            artboard,
-            "State Machine 1",
-            onStateChange: (stateMachineName, stateName) {
-              // print("$stateMachineName, $stateName");
-              setState(() {
-                int? id = initialValue!.id;
-                ratingValue = stateMachineController!.getInputValue(id);
-                widget.onRatingUpdate(ratingValue);
-              });
-            },
-          );
-          if (stateMachineController != null) {
-            artboard.addController(stateMachineController!);
-            initialValue = stateMachineController!.findInput("Rating");
-            initialValue!.change(widget.initialRating ?? 1);
-          }
-
-          /// Customisation of each components from rive.
-          artboard.forEachComponent(
-            (child) {
-              if (child is Shape) {
-                final Shape shape = child;
-                // if (shape.name == "Star_base_1") {
-                //   debugPrint("Shape Name====> ${shape.name}");
-                //   debugPrint(
-                //       "Shape Fills====> ${shape.fills.first.children[0]}");
-                //   debugPrint(
-                //       "Shape Strokes====> ${shape.strokes.elementAt(0).paint.color}");
-                // }
-                if (widget.activeFillColor != null) {
-                  if (shape.name == "Star_1" ||
-                      shape.name == "Star_2" ||
-                      shape.name == "Star_3" ||
-                      shape.name == "Star_4" ||
-                      shape.name == "Star_5") {
-                    (shape.fills.first.children[0] as SolidColor).colorValue =
-                        widget.activeFillColor!.value;
-                  } else if (shape.name == "Star_base_1" ||
-                      shape.name == "Star_base_2" ||
-                      shape.name == "Star_base_3" ||
-                      shape.name == "Star_base_4" ||
-                      shape.name == "Star_base_5") {
-                    (shape.strokes.first.children[0] as SolidColor).colorValue =
-                        widget.strokeColor?.value ??
-                            widget.activeFillColor!.value;
-                  } else if (shape.name == "Star_4_glow" ||
-                      shape.name == "Star_5_glow" ||
-                      shape.name == "Star_5_sparks") {
-                    (shape.strokes.first.children[0] as SolidColor).colorValue =
-                        widget.animationColor?.value ??
-                            widget.activeFillColor!.value;
-                  }
-                } else {
-                  var brightness = MediaQuery.of(context).platformBrightness;
-                  bool isDarkMode = brightness == Brightness.dark;
-                  if (shape.name == "Star_1" ||
-                      shape.name == "Star_2" ||
-                      shape.name == "Star_3" ||
-                      shape.name == "Star_4" ||
-                      shape.name == "Star_5") {
-                    (shape.fills.first.children[0] as SolidColor).colorValue =
-                        isDarkMode
-                            ? ThemeData.light().primaryColor.value
-                            : ThemeData.dark().primaryColor.value;
-                  } else if (shape.name == "Star_4_glow" ||
-                      shape.name == "Star_5_glow" ||
-                      shape.name == "Star_5_sparks") {
-                    (shape.strokes.first.children[0] as SolidColor).colorValue =
-                        isDarkMode
-                            ? ThemeData.light().primaryColor.value
-                            : ThemeData.dark().primaryColor.value;
-                  }
-                }
+    return Column(
+      children: [
+        SizedBox(
+          height: widget.height ?? 40,
+          width: widget.width ?? 140,
+          child: RiveAnimation.asset(
+            "packages/animated_rating_bar/assets/new_rating_animation.riv",
+            onInit: (artboard) {
+              stateMachineController = StateMachineController.fromArtboard(
+                artboard,
+                "State Machine 1",
+                onStateChange: (stateMachineName, stateName) {
+                  print("$stateMachineName, $stateName");
+                  setState(() {
+                    int? id = initialValue!.id;
+                    ratingValue = stateMachineController!.getInputValue(id);
+                    if(ratingValue != 0.0) valueReset = ratingValue.toInt();
+                    widget.onRatingUpdate(ratingValue);
+                  });
+                },
+              );
+              if (stateMachineController != null) {
+                artboard.addController(stateMachineController!);
+                initialValue = stateMachineController!.findInput("Rating");
+                initialValue!.change(widget.initialRating ?? 1);
               }
+              /// Customisation of each components from rive.
+              artboard.forEachComponent(
+                (child) {
+                  if (child is Shape) {
+                    final Shape shape = child;
+                    // if (shape.name == "Star_base_1") {
+                    //   debugPrint("Shape Name====> ${shape.name}");
+                    //   debugPrint(
+                    //       "Shape Fills====> ${shape.fills.first.children[0]}");
+                    //   debugPrint(
+                    //       "Shape Strokes====> ${shape.strokes.elementAt(0).paint.color}");
+                    // }
+                    if (widget.activeFillColor != null) {
+                      if (shape.name == "Star_1" ||
+                          shape.name == "Star_2" ||
+                          shape.name == "Star_3" ||
+                          shape.name == "Star_4" ||
+                          shape.name == "Star_5") {
+                        (shape.fills.first.children[0] as SolidColor).colorValue =
+                            widget.activeFillColor!.value;
+                      } else if (shape.name == "Star_base_1" ||
+                          shape.name == "Star_base_2" ||
+                          shape.name == "Star_base_3" ||
+                          shape.name == "Star_base_4" ||
+                          shape.name == "Star_base_5") {
+                        (shape.strokes.first.children[0] as SolidColor).colorValue =
+                            widget.strokeColor?.value ??
+                                widget.activeFillColor!.value;
+                      } else if (shape.name == "Star_4_glow" ||
+                          shape.name == "Star_5_glow" ||
+                          shape.name == "Star_5_sparks") {
+                        (shape.strokes.first.children[0] as SolidColor).colorValue =
+                            widget.animationColor?.value ??
+                                widget.activeFillColor!.value;
+                      }
+                    } else {
+                      var brightness = MediaQuery.of(context).platformBrightness;
+                      bool isDarkMode = brightness == Brightness.dark;
+                      if (shape.name == "Star_1" ||
+                          shape.name == "Star_2" ||
+                          shape.name == "Star_3" ||
+                          shape.name == "Star_4" ||
+                          shape.name == "Star_5") {
+                        (shape.fills.first.children[0] as SolidColor).colorValue =
+                            isDarkMode
+                                ? ThemeData.light().primaryColor.value
+                                : ThemeData.dark().primaryColor.value;
+                      } else if (shape.name == "Star_4_glow" ||
+                          shape.name == "Star_5_glow" ||
+                          shape.name == "Star_5_sparks") {
+                        (shape.strokes.first.children[0] as SolidColor).colorValue =
+                            isDarkMode
+                                ? ThemeData.light().primaryColor.value
+                                : ThemeData.dark().primaryColor.value;
+                      }
+                    }
+                  }
+                },
+              );
             },
-          );
-        },
-      ),
+          ),
+        ),
+        ValueListenableBuilder(
+          valueListenable: widget.reset!,
+          builder: (BuildContext context, int value, Widget? child) {
+            print("${value} - ${valueReset} ");
+            if(initialValue != null && value == 0 ) {
+              initialValue!.change(0);
+              valueReset = 10;
+            }
+            return Text(
+              '$value',
+              style: Theme.of(context).textTheme.headline4,
+            );
+          },
+        ),
+      ],
     );
   }
 }
